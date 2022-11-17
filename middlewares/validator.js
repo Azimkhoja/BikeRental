@@ -4,6 +4,7 @@ module.exports = function  (validator){
     if(!Validators.hasOwnProperty(validator)){
         throw new Error(`${validator} does not exists`)
     }
+    console.log("test");
     return async function (ctx, next){
         try {
             const validated = await Validators[validator].validateAsync(ctx.request.body)
