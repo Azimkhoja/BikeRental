@@ -9,6 +9,7 @@ const shopinfo = require("./shopinfo.validator");
 const user_group = require("./user_group.validator");
 const user = require("./user.validator");
 const otp = require("./otp.validator");
+const give_otp = require('./give-otp.validator')
 
 module.exports = {
   ads,
@@ -22,4 +23,5 @@ module.exports = {
   user_group,
   user,
   otp,
+  give_otp,
 };

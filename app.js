@@ -6,7 +6,7 @@ const bparser = require("koa-bodyparser");
 // const kstatic = require("koa-static");
 const cors = require("@koa/cors");
 const sequelize = require("./config/db");
-
+// const ApiError = require('./services/Reply-for-Errors')
 const router = require("./router/index.router");
 
 // app.use(kstatic(__dirname + "/public"));
@@ -14,6 +14,7 @@ app.use(bparser());
 app.use(cors());
 app.use(router);
 
+// app.use(ApiError)
 const run = async () => {
   try {
     await sequelize.authenticate();

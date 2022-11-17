@@ -8,6 +8,7 @@ const {
   deleteClient,
   verifyClientOTP,
   logoutClient,
+  givingOtp,
 } = require("../controller/client.controller");
 const Validator = require("../middlewares/validator");
 const clientPolice = require("../middlewares/clientPolice");
@@ -16,6 +17,7 @@ const router = new Router();
 
 router.post("/add", userPolice, Validator("client"), registClient);
 router.post("/login", loginClient);
+router.post("/give-otp",Validator("give_otp"), givingOtp);
 router.post("/registrate", registClient);
 router.post("/verify", verifyClientOTP);
 router.get("/all", clientPolice, getClients);

@@ -5,12 +5,10 @@ const Otp = sequelize.define(
   "otp",
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       primaryKey: true,
-      unique: true,
-      autoIncrement: true,
+      defaultValue: DataTypes.UUIDV4
     },
-    otp_owner_id: { type: DataTypes.INTEGER, allowNull: false },
     otp: { type: DataTypes.STRING(8), allowNull: false },
     expiration_time: { type: DataTypes.DATE, allowNull: false },
     verified: { type: DataTypes.BOOLEAN, defaultValue: false },

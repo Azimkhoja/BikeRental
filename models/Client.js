@@ -9,7 +9,7 @@ const Client = sequelize.define(
       autoIncrement: true,
       unique: true,
     },
-    client_code: { type: DataTypes.STRING(10) },
+    otp_id: { type: DataTypes.STRING },
     image: { type: DataTypes.STRING },
     client_name: { type: DataTypes.STRING(30), allowNull: false },
     email_address: {

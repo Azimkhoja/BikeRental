@@ -7,7 +7,7 @@ const { decode, encode } = require("../services/otp.generator");
 const jwt = require("../services/Jwt");
 const config = require("config");
 const Token = require("../models/Token");
-
+const ApiError = require('../services/Reply-for-Errors')
 function AddMinutesToDate(date, minutes) {
   return new Date(date.getTime() + minutes * 60000);
 }
@@ -40,6 +40,33 @@ const dates = {
   },
 };
 
+const givingOtp = async(ctx) => {
+  try {
+    const {contact_number} = ctx.request.body
+    const otp = otpGenerator.generate(4, {
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+    const now = new Date();
+    const expiration_time = AddMinutesToDate(now, 5);
+    const newotp = await Otp.create({
+      otp,
+      expiration_time,
+    });
+    const details = {
+      timestamp: now,
+      check: contact_number,
+      success: true,
+      message: "NEW otp generated",
+      otp_id: newotp.dataValues.id,
+    };
+    const encoded = await encode(JSON.stringify(details));
+    return (ctx.body = { status: "Success", details: encoded,});
+  } catch (error) {
+    console.log(error);
+  }
+}
 const registClient = async (ctx) => {
   try {
     const {
@@ -53,12 +80,18 @@ const registClient = async (ctx) => {
       password,
       status,
     } = ctx.request.body;
+    const verification_key = ctx.cookies.get("verificationKey")
+    ctx.cookies.set("refreshToken", null)
     let hashed = bcryptjs.hashSync(password);
     let image_path;
     if (ctx.request.body.image) {
       image_path = process.cwd() + "/images/clients/" + ctx.request.body.image;
     }
-    const newClient = await Client.create({
+    let decoded = await decode(verification_key);
+    let obj = JSON.parse(decoded);
+    
+    const client = await Client.create({
+      otp_id: obj.otp_id,
       image: image_path,
       client_name,
       email_address,
@@ -68,28 +101,23 @@ const registClient = async (ctx) => {
       password: hashed,
       status,
     });
+    let payload = {
+      id: client.client_id,
+        date: new Date(),
+      };
+      const tokens = jwt.generateTokens(payload);
+      await Token.create({
+        token_owner_id: client.client_id,
+        token: tokens.refreshToken,
+      });
+  
+      await client.save();
+      ctx.cookies.set("refreshToken", tokens.refreshToken, {
+        httpOnly: true,
+        maxAge: config.get("cookie_time"),
+      });
+      (ctx.status = 201), (ctx.body = { token: tokens });
 
-    const otp = otpGenerator.generate(4, {
-      upperCaseAlphabets: false,
-      lowerCaseAlphabets: false,
-      specialChars: false,
-    });
-    const now = new Date();
-    const expiration_time = AddMinutesToDate(now, 5);
-    const newotp = await Otp.create({
-      otp_owner_id: newClient.dataValues.client_id,
-      otp,
-      expiration_time,
-    });
-    const details = {
-      timestamp: now,
-      check: contact_number,
-      success: true,
-      message: "NEW otp generated",
-      otp_id: newotp.dataValues.id,
-    };
-    const encoded = await encode(JSON.stringify(details));
-    return (ctx.body = { status: "Success", details: encoded, newClient });
   } catch (error) {
     console.log(error.message);
   }
@@ -120,23 +148,25 @@ const verifyClientOTP = async (ctx) => {
     };
     return (ctx.body = { status: 400, response });
   }
-  let params = {
-    id: obj.otp_id,
-  };
-
-  const otpResult = await Otp.findOne({ where: { id: params.id } });
-  if (result != null) {
-    if (result.verified != true) {
-      if (dates.compare(result.expiration_time, currentdate) == 1) {
+  const otpResult = await Otp.findOne({ where: { id: obj.otp_id} });
+  console.log(otpResult);
+  if (otpResult != null) {
+    if (otpResult.verified != true) {
+      if (dates.compare(otpResult.expiration_time, currentdate) == 1) {
         if (otp == otpResult.otp) {
           await Otp.update({ verified: true },{ where: { id: otpResult.id}});
-          const clientResult = await Client.findOne({where: {contact: check}});
+          const clientResult = await Client.findOne({where: {contact_number: check}});
           if (!clientResult) {
             const response = {
               status: "success",
               details: "new",
               check: check,
+              url: `http://localhost:${config.get("port")}/bikerental/client/registrate`
             };
+            ctx.cookies.set("verificationKey", verification_key, {
+              httpOnly: true,
+              maxAge: config.get("cookie_time"),
+            });
             return (ctx.body = { status: 200, response });
           } else {
             const response = {
@@ -174,7 +204,7 @@ const loginClient = async (ctx) => {
       ctx.body = { message: "wrong email or password" };
     }
     let payload = {
-      id: client.client_id,
+    id: client.client_id,
       date: new Date(),
     };
     const tokens = jwt.generateTokens(payload);
@@ -281,6 +311,7 @@ const logoutClient = async (ctx) => {
 
 module.exports = {
   registClient,
+  givingOtp,
   loginClient,
   logoutClient,
   verifyClientOTP,

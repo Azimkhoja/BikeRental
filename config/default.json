@@ -1,5 +1,5 @@
 {
-    "port": 3030,
+    "port": 30300,
     "db_name": "bikerental",
     "db_username": "postgres",
     "db_password": "yangiParol",
