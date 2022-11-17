@@ -1,0 +1,15 @@
+{
+    "port": 3030,
+    "db_name": "bikerental",
+    "db_username": "postgres",
+    "db_password": "yangiParol",
+    "db_host": "localhost",
+    "db_port": 5432,
+    "crypt_password": "parol",
+    "access_time": "15m",
+    "refresh_time": "30d",
+    "access_key": "meAccess",
+    "refresh_key": "meRefresh",
+    "cookie_time": 2592000000,
+    "iv": "09012ooo"
+}
